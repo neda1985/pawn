@@ -2,73 +2,89 @@ package apis
 
 import (
 	"dvb_pawn_shop/pkg/input"
-	"net/http"
-	"net/http/httptest"
+
+	"reflect"
 	"sync"
 	"testing"
 )
 
 func TestShop_checkOffer(t *testing.T) {
-	one:=1
-	two:=2
-	three:=3
-	five:=5
-	minuseTwo:=-2
+	one := 1
+	two := 2
+	three := 3
+	four:=4
+	five := 5
+	minusTwo := -2
 	type fields struct {
 		Inventory []int
 		mu        sync.Mutex
 	}
 	type args struct {
-		w       http.ResponseWriter
 		pawnReq input.PawnRequest
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   bool
+		name    string
+		fields  fields
+		args    args
+		want    *int
+		wantErr bool
 	}{
 		{
-			name: "Accept with Value 1",
+			name: "Accept with return Value 1 and minus demand",
 			fields: fields{
-				Inventory: []int{1,1 , 1, 1,1},
+				Inventory: []int{1, 1, 1, 1, 1},
 			},
 			args: args{
-				w: httptest.NewRecorder(),
+
 				pawnReq: input.PawnRequest{
-					Demand: &minuseTwo,
+					Demand: &minusTwo,
 					Offer:  &five,
 				},
 			},
-			want: true,
+			want:    &one,
+			wantErr: false,
 		},
 		{
 			name: "Sanity failed, Demand should be less than Offer",
 			fields: fields{
-				Inventory: []int{1, 1, 1, 1,5},
+				Inventory: []int{1, 1, 1, 1, 5},
 			},
 			args: args{
-				w: httptest.NewRecorder(),
 				pawnReq: input.PawnRequest{
 					Demand: &three,
 					Offer:  &two,
 				},
 			},
-			want: false,
+			want:    nil,
+			wantErr: true,
 		},
 		{
-			name: "Accept with Value 1",
+			name: "Accept with return Value 1 and demand two",
 			fields: fields{
-				Inventory: []int{1,1,1,1,5},
+				Inventory: []int{1, 1, 1, 1, 5},
 			},
 			args: args{
-				w: httptest.NewRecorder(),
 				pawnReq: input.PawnRequest{
 					Demand: &one,
 					Offer:  &two,
 				},
 			},
-			want: true,
+			wantErr: false,
+			want:    &one,
+		},
+		{
+			name: "no item found in inventory to be bigger than Demand and less than offer at the same time",
+			fields: fields{
+				Inventory: []int{1, 1, 1, 1, 5},
+			},
+			args: args{
+				pawnReq: input.PawnRequest{
+					Demand: &three,
+					Offer:  &four,
+				},
+			},
+			wantErr: true,
+			want:    nil,
 		},
 	}
 	for _, tt := range tests {
@@ -77,8 +93,13 @@ func TestShop_checkOffer(t *testing.T) {
 				Inventory: tt.fields.Inventory,
 				mu:        tt.fields.mu,
 			}
-			if got := s.checkOffer(tt.args.w, tt.args.pawnReq); got != tt.want {
-				t.Errorf("checkOffer() = %v, want %v", got, tt.want)
+			got, err := s.checkOffer(tt.args.pawnReq)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("checkOffer() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("checkOffer() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

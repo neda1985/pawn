@@ -1,6 +1,7 @@
 package output
+
 type PawnResponse struct {
-	Code  string `json:"code"`
+	Code    string `json:"code"`
 	Message string `json:"message,omitempty"`
-	Value int    `json:"value,omitempty"`
+	Value   int    `json:"value,omitempty"`
 }

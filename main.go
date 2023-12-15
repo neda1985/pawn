@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dvb_pawn_shop/pkg/apis"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +13,9 @@ import (
 )
 
 func main() {
-	shop := apis.NewShop(5)
+	shopNumber := flag.Int("shop_number", 5, "please provide desired shop number")
+	flag.Parse()
+	shop := apis.NewShop(*shopNumber)
 
 		httpServer := &http.Server{
 		Addr: ":8080" ,
